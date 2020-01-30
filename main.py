@@ -1,22 +1,21 @@
-import time
 import requests
 from bs4 import BeautifulSoup
 import re
 from datetime import datetime
 import csv
 from notify_run import Notify
+import traceback
 
 page = requests.get("https://www.ub.uni-muenchen.de/arbeiten/platzfinder/index.html")
 pattern = re.compile("(?<=google.visualization.arrayToDataTable\(\[)(.*)(?=\]\);)")
 
 
-
-
-
-def sendNotification(avgAuslastung):
-    notify = Notify()
-    message = "AVG Auslastung: " + avgAuslastung
-    notify.send(message)
+def sendNotification(message):
+    try:
+        notify = Notify()
+        notify.send(message)
+    except Exception:
+        print(traceback.print_exc())
 
 
 def scrape():
@@ -24,9 +23,12 @@ def scrape():
     date = now.strftime("%d.%m.%Y")
     time = now.strftime("%H:%M:%S")
     hour = now.time().hour
+    minute = now.time().minute
+
 
     if hour < 8:
         return
+
 
     soup = BeautifulSoup(page.content, 'html.parser')
 
@@ -40,29 +42,33 @@ def scrape():
         soup2 = BeautifulSoup(page2.content, 'html.parser')
         string = pattern.findall(soup2.text)[0]
         wortListe = string.replace(']', '').replace('[', '').replace(' ', '').replace('\'', '').split(',')
-        lesesaal = wortListe[3]
-        belegt = wortListe[-2]
-        frei = wortListe[-1]
-        beschraenkt = False
 
-        if (wortListe[2] != "freiePlätze"):
-            beschraenkt = True;
+        if wortListe[0] == "Lesesaal":
 
-        if (int(belegt) > 5):
-            auslastung += int(belegt)
+            lesesaal = wortListe[3]
+            belegt = wortListe[-2]
+            frei = wortListe[-1]
+            beschraenkt = False
 
-        fields = [date, time, lesesaal, belegt, frei, beschraenkt]
-        with open(r'log.csv', 'a') as f:
-            writer = csv.writer(f)
-            writer.writerow(fields)
+            if wortListe[2] != "freiePlätze":
+                beschraenkt = True;
 
-    avgAuslastung = str(round(auslastung / len(frames), 2))
+            if int(belegt) > 5:
+                auslastung += int(belegt)
 
-    print(avgAuslastung)
+            fields = [date, time, lesesaal, belegt, frei, beschraenkt]
+            with open(r'log.csv', 'a') as f:
+                writer = csv.writer(f)
+                writer.writerow(fields)
 
-    sendNotification(avgAuslastung)
+    avg_auslastung = str(round(auslastung / len(frames), 2))
+
+    if hour == 11 & minute < 30:
+        sendNotification("AVG Auslastung: " + avg_auslastung)
 
 
-while True:
+try:
     scrape()
-    time.sleep(3600)
+except Exception:
+    print(traceback.print_exc())
+    sendNotification("Fehler bei Scraper aufgetreten")
