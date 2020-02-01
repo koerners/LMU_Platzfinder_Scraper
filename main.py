@@ -2,39 +2,27 @@ import requests
 from bs4 import BeautifulSoup
 import re
 from datetime import datetime
-import csv
-from notify_run import Notify
 import traceback
+import sqlite3
+
+conn = sqlite3.connect('bib.db')
+c = conn.cursor()
 
 page = requests.get("https://www.ub.uni-muenchen.de/arbeiten/platzfinder/index.html")
 pattern = re.compile("(?<=google.visualization.arrayToDataTable\(\[)(.*)(?=\]\);)")
-
-
-def sendNotification(message):
-    try:
-        notify = Notify()
-        notify.send(message)
-    except Exception:
-        print(traceback.print_exc())
 
 
 def scrape():
     now = datetime.now()  # current date and time
     date = now.strftime("%d.%m.%Y")
     time = now.strftime("%H:%M:%S")
-    hour = now.time().hour
-    minute = now.time().minute
 
-
-    if hour < 8:
+    if now.time().hour < 8:
         return
-
 
     soup = BeautifulSoup(page.content, 'html.parser')
 
     frames = soup.findAll('iframe')
-
-    auslastung = 0
 
     for frame in frames:
 
@@ -51,24 +39,20 @@ def scrape():
             beschraenkt = False
 
             if wortListe[2] != "freiePlätze":
-                beschraenkt = True;
-
-            if int(belegt) > 5:
-                auslastung += int(belegt)
+                beschraenkt = True
 
             fields = [date, time, lesesaal, belegt, frei, beschraenkt]
-            with open(r'log.csv', 'a') as f:
-                writer = csv.writer(f)
-                writer.writerow(fields)
 
-    avg_auslastung = str(round(auslastung / len(frames), 2))
+            c.execute(
+                "INSERT INTO `auslastung`(`Day`,`Time`,`Ort`,`Belegt`,`Frei`,`Beschraenkt`) VALUES (?, ?, ?, ?, ?,?);",
+                fields)
 
-    if hour == 11 & minute < 30:
-        sendNotification("AVG Auslastung: " + avg_auslastung)
+            conn.commit()
+
+    conn.close()
 
 
 try:
     scrape()
 except Exception:
     print(traceback.print_exc())
-    sendNotification("Fehler bei Scraper aufgetreten")
