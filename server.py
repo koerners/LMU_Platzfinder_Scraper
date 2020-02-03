@@ -14,7 +14,8 @@ class ItemStore(object):
 
     @app.route('/')
     def items(self, request):
-        for row in c.execute('SELECT * FROM `auslastung`'):
+        self._items.clear()
+        for row in c.execute('SELECT * FROM `auslastung` order by PK desc limit 200'):
             self._items.append(row)
         request.setHeader('Access-Control-Allow-Origin', '*')
         request.setHeader('Content-Type', 'application/json')
@@ -22,7 +23,7 @@ class ItemStore(object):
 
     @app.route('/bib/<string:name>/<string:limit>', methods=['GET'])
     def get_item(self, request, name, limit):
-        self._items.clear();
+        self._items.clear()
         fields = [name, limit]
         for row in c.execute('SELECT * FROM `auslastung` where Ort = ? order by PK desc limit ?', fields):
             self._items.append(row)
