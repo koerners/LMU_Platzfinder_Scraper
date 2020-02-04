@@ -46,6 +46,7 @@ def getAllCurrent():
     plt.tight_layout()
     f = io.StringIO()
     plt.savefig(f, format="svg")
+    plt.close(fig)
     return fixSVG(f.getvalue())
 
 
@@ -58,7 +59,7 @@ def getSingleBib(name, limit):
     df['datetime'] = pd.to_datetime(df['datetime'])
     df.drop([0, 1, 2], axis=1, inplace=True)
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(11, 5))
     val = df
     date = val['datetime']
     belegt = val[4]
@@ -69,6 +70,7 @@ def getSingleBib(name, limit):
     plt.tight_layout()
     f = io.StringIO()
     plt.savefig(f, format="svg")
+    plt.close(fig)
     return fixSVG(f.getvalue())
 
 
@@ -87,21 +89,27 @@ def getCurrentStatus():
 
 @app.route('/')
 def items(self):
+    self.setHeader('Access-Control-Allow-Origin', '*')
+    self.setHeader('Content-Type', 'application/json')
     return ("Connected")
 
 
 @app.route('/allGraph')
 def itemsGraph(self):
+    self.setHeader('Access-Control-Allow-Origin', '*')
     return getAllCurrent()
 
 
 @app.route('/status')
 def itemsStatus(self):
+    self.setHeader('Access-Control-Allow-Origin', '*')
+    self.setHeader('Content-Type', 'application/json')
     return json.dumps(getCurrentStatus(), default=str)
 
 
 @app.route('/bib/<string:name>/<string:limit>', methods=['GET'])
 def get_item(self, name, limit):
-
+    self.setHeader('Access-Control-Allow-Origin', '*')
+    self.setHeader('Content-Type', 'application/json')
     return getSingleBib(name, limit)
 
