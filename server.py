@@ -6,16 +6,22 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+app = Klein()
+resource = app.resource
+
+
 conn = sqlite3.connect('bib.db')
 c = conn.cursor()
+
 
 sns.set_style("whitegrid")
 blue, = sns.color_palette("muted", 1)
 
 svgStart = '<svg version="1.1" viewBox="0 0 792 360"  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">'
 
+
 def fixSVG(string):
-    svg = string.split('xmlns:xlink="http://www.w3.org/1999/xlink">',1)[1]
+    svg = string.split('xmlns:xlink="http://www.w3.org/1999/xlink">', 1)[1]
     svg = svgStart + svg
     return svg
 
@@ -29,7 +35,7 @@ def getAllCurrent():
     df.drop([0, 1, 2], axis=1, inplace=True)
     availableBibs = df[3].unique()
 
-    fig = plt.figure(figsize=(11,5))
+    fig = plt.figure(figsize=(11, 5))
     for bib in availableBibs:
         val = df.loc[df[3] == bib]
         date = val['datetime']
@@ -77,37 +83,25 @@ def getCurrentStatus():
     return df.values.tolist()
 
 
-class ItemStore(object):
-    app = Klein()
-
-    def __init__(self):
-        self._items = []
-
-    @app.route('/')
-    def items(self, request):
-        request.setHeader('Access-Control-Allow-Origin', '*')
-        request.setHeader('Content-Type', 'application/json')
-        return ("Connected")
-
-    @app.route('/allGraph')
-    def itemsGraph(self, request):
-        request.setHeader('Access-Control-Allow-Origin', '*')
-        request.setHeader('Content-Type', 'application/json')
-        return getAllCurrent()
-
-    @app.route('/status')
-    def itemsStatus(self, request):
-        request.setHeader('Access-Control-Allow-Origin', '*')
-        request.setHeader('Content-Type', 'application/json')
-        return json.dumps(getCurrentStatus(), default=str)
-
-    @app.route('/bib/<string:name>/<string:limit>', methods=['GET'])
-    def get_item(self, request, name, limit):
-        request.setHeader('Access-Control-Allow-Origin', '*')
-        request.setHeader('Content-Type', 'application/json')
-        return getSingleBib(name, limit)
 
 
-if __name__ == '__main__':
-    store = ItemStore()
-    store.app.run('', 8080)
+@app.route('/')
+def items(self):
+    return ("Connected")
+
+
+@app.route('/allGraph')
+def itemsGraph(self):
+    return getAllCurrent()
+
+
+@app.route('/status')
+def itemsStatus(self):
+    return json.dumps(getCurrentStatus(), default=str)
+
+
+@app.route('/bib/<string:name>/<string:limit>', methods=['GET'])
+def get_item(self, name, limit):
+
+    return getSingleBib(name, limit)
+
