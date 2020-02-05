@@ -7,15 +7,13 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.dates as mdates
 import matplotlib.ticker as mtick
-
+import numpy as np
 
 app = Klein()
 resource = app.resource
 
-
 conn = sqlite3.connect('bib.db')
 c = conn.cursor()
-
 
 sns.set_style("whitegrid")
 blue, = sns.color_palette("muted", 1)
@@ -24,14 +22,14 @@ svgStart = '<svg version="1.1" viewBox="0 0 792 360"  xmlns="http://www.w3.org/2
 
 
 def fixSVG(string):
-
     svg = string.split('xmlns:xlink="http://www.w3.org/1999/xlink">', 1)[1]
     svg = svgStart + svg
     return svg
 
 
 def getAllCurrent():
-    c.execute('SELECT auslastung.Daytime, bibs.RealName, auslastung.Belegt FROM auslastung INNER JOIN bibs ON bibs.PK = auslastung.Ort order by auslastung.Daytime desc limit 1000')
+    c.execute(
+        'SELECT auslastung.Daytime, bibs.RealName, auslastung.Belegt FROM auslastung INNER JOIN bibs ON bibs.PK = auslastung.Ort order by auslastung.Daytime desc limit 1000')
     alist = c.fetchall()
     df = pd.DataFrame(alist)
     df['datetime'] = pd.to_datetime(df[0])
@@ -62,14 +60,16 @@ def getSingleBib(name, limit):
     fields = [name, limit]
 
     if (int(limit) < 70):
-        c.execute('SELECT auslastung.Daytime, bibs.RealName, auslastung.Belegt FROM auslastung INNER JOIN bibs ON bibs.PK = auslastung.Ort where bibs.CutName = ? order by auslastung.Daytime desc limit ?', fields)
+        c.execute(
+            'SELECT auslastung.Daytime, bibs.RealName, auslastung.Belegt FROM auslastung INNER JOIN bibs ON bibs.PK = auslastung.Ort where bibs.CutName = ? order by auslastung.Daytime desc limit ?',
+            fields)
     else:
-        c.execute('SELECT auslastung.Daytime, bibs.RealName, auslastung.Belegt FROM auslastung INNER JOIN bibs ON bibs.PK = auslastung.Ort where bibs.CutName = ? and (strftime("%M", auslastung.Daytime) == "00") order by auslastung.Daytime desc limit ?',fields)
+        c.execute(
+            'SELECT auslastung.Daytime, bibs.RealName, auslastung.Belegt FROM auslastung INNER JOIN bibs ON bibs.PK = auslastung.Ort where bibs.CutName = ? and (strftime("%M", auslastung.Daytime) == "00") order by auslastung.Daytime desc limit ?',
+            fields)
 
     alist = c.fetchall()
     df = pd.DataFrame(alist)
-
-    print(df)
 
     df['datetime'] = pd.to_datetime(df[0])
 
@@ -86,7 +86,6 @@ def getSingleBib(name, limit):
     fig.autofmt_xdate()
     plt.tight_layout()
 
-
     f = io.StringIO()
     plt.savefig(f, format="svg")
     plt.close(fig)
@@ -102,6 +101,72 @@ def getCurrentStatus():
     return df.values.tolist()
 
 
+def horBar():
+    category_names = ['Not available', 'Available']
+
+    c.execute(
+        'SELECT auslastung.Daytime, bibs.RealName, bibs.CutName, auslastung.Belegt, auslastung.Frei, auslastung.Beschraenkt FROM auslastung INNER JOIN bibs ON bibs.PK = auslastung.Ort where auslastung.Daytime = (select Daytime from auslastung order by PK desc limit 1)')
+    alist = c.fetchall()
+    df = pd.DataFrame(alist)
+    df.drop(columns=[0, 2, 5], inplace=True)
+    results = df.set_index(1).T.to_dict('list')
+
+    labels = list(results.keys())
+    data = np.array(list(results.values()))
+    data_cum = data.cumsum(axis=1)
+    category_colors = plt.get_cmap('RdYlGn')(
+        np.linspace(0.15, 0.85, data.shape[1]))
+
+    fig, ax = plt.subplots(figsize=(9.2, 5))
+    ax.invert_yaxis()
+    ax.xaxis.set_visible(False)
+    ax.set_xlim(0, np.sum(data, axis=1).max())
+
+    for i, (colname, color) in enumerate(zip(category_names, category_colors)):
+        widths = data[:, i]
+        starts = data_cum[:, i] - widths
+        ax.barh(labels, widths, left=starts, height=0.5,
+                label=colname, color=color)
+
+    ax.legend(ncol=len(category_names), bbox_to_anchor=(0, 1),
+              loc='lower left', fontsize='small')
+
+    plt.tight_layout()
+    f = io.StringIO()
+    plt.savefig(f, format="svg")
+    plt.close(fig)
+    return fixSVG(f.getvalue())
+
+def getAverageHalfDay():
+    c.execute(
+        'SELECT avg(Belegt), Daytime FROM auslastung WHERE  datetime(Daytime) >=datetime("now", "-12 Hour") GROUP BY strftime ("%H:%M %d",Daytime)')
+    alist = c.fetchall()
+    df = pd.DataFrame(alist)
+
+    df['datetime'] = pd.to_datetime(df[1])
+
+    fig, ax = plt.subplots(figsize=(11, 5))
+    date = df['datetime']
+    belegt = df[0]
+
+    border = np.ma.masked_where(date.dt.hour < 8, belegt)
+
+    plt.plot(date, border)
+
+    ax.yaxis.set_major_formatter(mtick.PercentFormatter())
+    formatter = mdates.DateFormatter('%d.%m. %H:%M')
+    ax.xaxis.set_major_formatter(formatter)
+    plt.fill_between(date, 0, border, alpha=.3)
+    plt.legend(["Average occupancy for all libraries in %"], loc='upper left')
+    fig.autofmt_xdate()
+    plt.tight_layout()
+
+    f = io.StringIO()
+    plt.savefig(f, format="svg")
+    plt.close(fig)
+    return fixSVG(f.getvalue())
+
+
 @app.route('/')
 def items(self):
     self.setHeader('Access-Control-Allow-Origin', '*')
@@ -112,6 +177,18 @@ def items(self):
 def itemsGraph(self):
     self.setHeader('Access-Control-Allow-Origin', '*')
     return getAllCurrent()
+
+
+@app.route('/currentBar')
+def currentbar(self):
+    self.setHeader('Access-Control-Allow-Origin', '*')
+    return horBar()
+
+
+@app.route('/currentAvg')
+def currentavg(self):
+    self.setHeader('Access-Control-Allow-Origin', '*')
+    return getAverageHalfDay()
 
 
 @app.route('/status')
@@ -125,4 +202,3 @@ def itemsStatus(self):
 def get_item(self, name, limit):
     self.setHeader('Access-Control-Allow-Origin', '*')
     return getSingleBib(name, limit)
-
