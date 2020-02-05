@@ -5,6 +5,9 @@ import io
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import matplotlib.dates as mdates
+import matplotlib.ticker as mtick
+
 
 app = Klein()
 resource = app.resource
@@ -21,29 +24,38 @@ svgStart = '<svg version="1.1" viewBox="0 0 792 360"  xmlns="http://www.w3.org/2
 
 
 def fixSVG(string):
+
     svg = string.split('xmlns:xlink="http://www.w3.org/1999/xlink">', 1)[1]
     svg = svgStart + svg
     return svg
 
 
 def getAllCurrent():
-    c.execute('SELECT * FROM `auslastung` order by PK desc limit 300')
+    c.execute('SELECT * FROM `auslastung` order by PK desc limit 1000')
     alist = c.fetchall()
     df = pd.DataFrame(alist)
     df['datetime'] = df[1].astype(str) + ' ' + df[2]
-    df['datetime'] = pd.to_datetime(df['datetime'])
+    df['datetime'] = pd.to_datetime(df['datetime'], dayfirst=True)
+
     df.drop([0, 1, 2], axis=1, inplace=True)
     availableBibs = df[3].unique()
+    fig, ax = plt.subplots(figsize=(11, 5))
 
-    fig = plt.figure(figsize=(11, 5))
     for bib in availableBibs:
         val = df.loc[df[3] == bib]
         date = val['datetime']
         belegt = val[4]
-        plt.plot(date, belegt)
+        ax.plot(date, belegt)
+
     plt.legend(availableBibs, loc='upper left')
+    ax.yaxis.set_major_formatter(mtick.PercentFormatter())
+    formatter = mdates.DateFormatter('%d.%m. %H:%M')
+    ax.xaxis.set_major_formatter(formatter)
     fig.autofmt_xdate()
     plt.tight_layout()
+
+
+
     f = io.StringIO()
     plt.savefig(f, format="svg")
     plt.close(fig)
@@ -52,22 +64,36 @@ def getAllCurrent():
 
 def getSingleBib(name, limit):
     fields = [name, limit]
-    c.execute('SELECT * FROM `auslastung` where Ort = ? order by PK desc limit ?', fields)
+
+    if (int(limit) < 70):
+        c.execute('SELECT * FROM `auslastung` where Ort = ? order by PK desc limit ?', fields)
+    else:
+        c.execute(
+            'SELECT * FROM `auslastung` where Ort = ? and (strftime("%M", Time) == "00") order by PK desc limit ?',
+            fields)
+
     alist = c.fetchall()
     df = pd.DataFrame(alist)
+
     df['datetime'] = df[1].astype(str) + ' ' + df[2]
-    df['datetime'] = pd.to_datetime(df['datetime'])
+    df['datetime'] = pd.to_datetime(df['datetime'], dayfirst=True)
     df.drop([0, 1, 2], axis=1, inplace=True)
 
-    fig = plt.figure(figsize=(11, 5))
+    fig, ax = plt.subplots(figsize=(11, 5))
     val = df
     date = val['datetime']
     belegt = val[4]
     plt.plot(date, belegt)
+
+    ax.yaxis.set_major_formatter(mtick.PercentFormatter())
+    formatter = mdates.DateFormatter('%d.%m. %H:%M')
+    ax.xaxis.set_major_formatter(formatter)
     plt.fill_between(date, 0, belegt, alpha=.3)
     plt.legend(["Occupancy in %"], loc='upper left')
     fig.autofmt_xdate()
     plt.tight_layout()
+
+
     f = io.StringIO()
     plt.savefig(f, format="svg")
     plt.close(fig)
@@ -90,7 +116,6 @@ def getCurrentStatus():
 @app.route('/')
 def items(self):
     self.setHeader('Access-Control-Allow-Origin', '*')
-    self.setHeader('Content-Type', 'application/json')
     return ("Connected")
 
 
@@ -110,6 +135,5 @@ def itemsStatus(self):
 @app.route('/bib/<string:name>/<string:limit>', methods=['GET'])
 def get_item(self, name, limit):
     self.setHeader('Access-Control-Allow-Origin', '*')
-    self.setHeader('Content-Type', 'application/json')
     return getSingleBib(name, limit)
 
