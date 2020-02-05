@@ -4,6 +4,7 @@ import re
 from datetime import datetime
 import traceback
 import sqlite3
+import pandas as pd
 
 conn = sqlite3.connect('bib.db')
 c = conn.cursor()
@@ -14,11 +15,11 @@ pattern = re.compile("(?<=google.visualization.arrayToDataTable\(\[)(.*)(?=\]\);
 
 def scrape():
     now = datetime.now()  # current date and time
-    date = now.strftime("%d.%m.%Y")
-    time = now.strftime("%H:%M:%S")
+    daytime = now.strftime("%Y-%m-%d %H:%M:%S")
 
-    if now.time().hour < 8:
-        return
+    c.execute('SELECT PK, CutName from `bibs`')
+    alist = c.fetchall()
+    df = pd.DataFrame(alist)
 
     soup = BeautifulSoup(page.content, 'html.parser')
 
@@ -34,6 +35,7 @@ def scrape():
         if wortListe[0] == "Lesesaal":
 
             lesesaal = wortListe[3]
+            lesesaalNr = df.loc[df[1] == lesesaal, 0].iloc[0]
             belegt = wortListe[-2]
             frei = wortListe[-1]
             beschraenkt = False
@@ -41,10 +43,10 @@ def scrape():
             if wortListe[2] != "freiePlätze":
                 beschraenkt = True
 
-            fields = [date, time, lesesaal, belegt, frei, beschraenkt]
+            fields = [daytime, int(lesesaalNr), belegt, frei, beschraenkt]
 
             c.execute(
-                "INSERT INTO `auslastung`(`Day`,`Time`,`Ort`,`Belegt`,`Frei`,`Beschraenkt`) VALUES (?, ?, ?, ?, ?,?);",
+                "INSERT INTO `auslastung`(`Daytime`,`Ort`,`Belegt`,`Frei`,`Beschraenkt`) VALUES (?, ?, ?, ?,?);",
                 fields)
 
             conn.commit()

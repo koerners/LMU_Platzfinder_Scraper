@@ -1,0 +1,1 @@
+PYTHONPATH=. twistd -n web --class=server.resource

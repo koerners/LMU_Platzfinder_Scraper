@@ -31,20 +31,18 @@ def fixSVG(string):
 
 
 def getAllCurrent():
-    c.execute('SELECT * FROM `auslastung` order by PK desc limit 1000')
+    c.execute('SELECT auslastung.Daytime, bibs.RealName, auslastung.Belegt FROM auslastung INNER JOIN bibs ON bibs.PK = auslastung.Ort order by auslastung.Daytime desc limit 1000')
     alist = c.fetchall()
     df = pd.DataFrame(alist)
-    df['datetime'] = df[1].astype(str) + ' ' + df[2]
-    df['datetime'] = pd.to_datetime(df['datetime'], dayfirst=True)
+    df['datetime'] = pd.to_datetime(df[0])
 
-    df.drop([0, 1, 2], axis=1, inplace=True)
-    availableBibs = df[3].unique()
+    availableBibs = df[1].unique()
     fig, ax = plt.subplots(figsize=(11, 5))
 
     for bib in availableBibs:
-        val = df.loc[df[3] == bib]
+        val = df.loc[df[1] == bib]
         date = val['datetime']
-        belegt = val[4]
+        belegt = val[2]
         ax.plot(date, belegt)
 
     plt.legend(availableBibs, loc='upper left')
@@ -53,8 +51,6 @@ def getAllCurrent():
     ax.xaxis.set_major_formatter(formatter)
     fig.autofmt_xdate()
     plt.tight_layout()
-
-
 
     f = io.StringIO()
     plt.savefig(f, format="svg")
@@ -66,23 +62,20 @@ def getSingleBib(name, limit):
     fields = [name, limit]
 
     if (int(limit) < 70):
-        c.execute('SELECT * FROM `auslastung` where Ort = ? order by PK desc limit ?', fields)
+        c.execute('SELECT auslastung.Daytime, bibs.RealName, auslastung.Belegt FROM auslastung INNER JOIN bibs ON bibs.PK = auslastung.Ort where bibs.CutName = ? order by auslastung.Daytime desc limit ?', fields)
     else:
-        c.execute(
-            'SELECT * FROM `auslastung` where Ort = ? and (strftime("%M", Time) == "00") order by PK desc limit ?',
-            fields)
+        c.execute('SELECT auslastung.Daytime, bibs.RealName, auslastung.Belegt FROM auslastung INNER JOIN bibs ON bibs.PK = auslastung.Ort where bibs.CutName = ? and (strftime("%M", auslastung.Daytime) == "00") order by auslastung.Daytime desc limit ?',fields)
 
     alist = c.fetchall()
     df = pd.DataFrame(alist)
 
-    df['datetime'] = df[1].astype(str) + ' ' + df[2]
-    df['datetime'] = pd.to_datetime(df['datetime'], dayfirst=True)
-    df.drop([0, 1, 2], axis=1, inplace=True)
+    print(df)
+
+    df['datetime'] = pd.to_datetime(df[0])
 
     fig, ax = plt.subplots(figsize=(11, 5))
-    val = df
-    date = val['datetime']
-    belegt = val[4]
+    date = df['datetime']
+    belegt = df[2]
     plt.plot(date, belegt)
 
     ax.yaxis.set_major_formatter(mtick.PercentFormatter())
@@ -102,15 +95,11 @@ def getSingleBib(name, limit):
 
 def getCurrentStatus():
     c.execute(
-        'select * from auslastung where Day = (select Day from auslastung order by PK desc limit 1) and Time = (select Time from auslastung order by PK desc limit 1)')
+        'SELECT auslastung.Daytime, bibs.RealName, bibs.CutName, auslastung.Belegt, auslastung.Frei, auslastung.Beschraenkt FROM auslastung INNER JOIN bibs ON bibs.PK = auslastung.Ort where auslastung.Daytime = (select Daytime from auslastung order by PK desc limit 1)')
     alist = c.fetchall()
     df = pd.DataFrame(alist)
-    df['datetime'] = df[1].astype(str) + ' ' + df[2]
-    df['datetime'] = pd.to_datetime(df['datetime'])
-    df.drop([0, 1, 2], axis=1, inplace=True)
+    df[0] = pd.to_datetime(df[0])
     return df.values.tolist()
-
-
 
 
 @app.route('/')
