@@ -139,7 +139,7 @@ def horBar():
 
 def getAverageHalfDay():
     c.execute(
-        'SELECT avg(Belegt), Daytime FROM auslastung WHERE  datetime(Daytime) >=datetime("now", "-12 Hour") GROUP BY strftime ("%H:%M %d",Daytime)')
+        'SELECT avg(Belegt), Daytime FROM auslastung WHERE  datetime(Daytime) >=datetime("now", "-12 Hour") GROUP BY strftime ("%H:%M %d",Daytime) order by PK desc')
     alist = c.fetchall()
     df = pd.DataFrame(alist)
 
@@ -149,14 +149,14 @@ def getAverageHalfDay():
     date = df['datetime']
     belegt = df[0]
 
-    border = np.ma.masked_where(date.dt.hour < 8, belegt)
+    # border = np.ma.masked_where(date.dt.hour < 8, belegt)
 
-    plt.plot(date, border)
+    plt.plot(date, belegt)
 
     ax.yaxis.set_major_formatter(mtick.PercentFormatter())
     formatter = mdates.DateFormatter('%d.%m. %H:%M')
     ax.xaxis.set_major_formatter(formatter)
-    plt.fill_between(date, 0, border, alpha=.3)
+    plt.fill_between(date, 0, belegt, alpha=.3)
     plt.legend(["Average occupancy for all libraries in %"], loc='upper left')
     fig.autofmt_xdate()
     plt.tight_layout()
@@ -165,6 +165,57 @@ def getAverageHalfDay():
     plt.savefig(f, format="svg")
     plt.close(fig)
     return fixSVG(f.getvalue())
+
+
+def avergagebyWeekday():
+    c.execute('select round(avg(belegt),2),  round(avg(beschraenkt),2), case cast (strftime("%w", Daytime) as integer) when 0 then "Sunday" when 1 then "Monday" when 2 then "Tuesday" when 3 then "Wednesday" when 4 then "Thursday" when 5 then "Friday" else "Saturday" end as servdayofweek from auslastung group by strftime("%w", Daytime) ')
+    alist = c.fetchall()
+    df = pd.DataFrame(alist)
+
+    ind = df[2]  # the x locations for the groups
+    width = 0.5  # the width of the bars: can also be len(x) sequence
+
+    plt.subplots(figsize=(11, 5))
+    p1 = plt.bar(ind, df[0]*(1-df[1]), width)
+    p2 = plt.bar(ind, df[0]*df[1], width,
+                 bottom=df[0]*(1-df[1]))
+
+    plt.ylabel('Occupancy in %')
+
+    plt.legend((p1[0], p2[0]), ('Open to public', 'Faculty only'))
+
+    plt.tight_layout()
+
+    f = io.StringIO()
+    plt.savefig(f, format="svg")
+    return fixSVG(f.getvalue())
+
+
+def avgbyWkdayByBib(name):
+    fields = [name]
+    c.execute('SELECT round(avg(auslastung.belegt),2), round(avg(auslastung.beschraenkt),2),  case cast (strftime("%w", auslastung.Daytime) as integer) when 0 then "Sunday" when 1 then "Monday" when 2 then "Tuesday" when 3 then "Wednesday" when 4 then "Thursday" when 5 then "Friday" else "Saturday" end as servdayofweek FROM auslastung INNER JOIN bibs ON bibs.PK = auslastung.Ort where bibs.CutName = ? group by strftime("%w", auslastung.Daytime)' , fields)
+    alist = c.fetchall()
+    df = pd.DataFrame(alist)
+
+
+    ind = df[2]  # the x locations for the groups
+    width = 0.5  # the width of the bars: can also be len(x) sequence
+
+    plt.subplots(figsize=(11, 5))
+    p1 = plt.bar(ind, df[0]*(1-df[1]), width)
+    p2 = plt.bar(ind, df[0]*df[1], width,
+                 bottom=df[0]*(1-df[1]))
+
+    plt.ylabel('Occupancy in %')
+
+    plt.legend((p1[0], p2[0]), ('Open to public', 'Faculty only'))
+
+    plt.tight_layout()
+
+    f = io.StringIO()
+    plt.savefig(f, format="svg")
+    return fixSVG(f.getvalue())
+
 
 
 @app.route('/')
@@ -189,6 +240,16 @@ def currentbar(self):
 def currentavg(self):
     self.setHeader('Access-Control-Allow-Origin', '*')
     return getAverageHalfDay()
+
+@app.route('/avgWkDayAll')
+def avgWeekdayAll(self):
+    self.setHeader('Access-Control-Allow-Origin', '*')
+    return avergagebyWeekday()
+
+@app.route('/wkdayBib/<string:name>', methods=['GET'])
+def avgWeekdayBib(self, name):
+    self.setHeader('Access-Control-Allow-Origin', '*')
+    return avgbyWkdayByBib(name)
 
 
 @app.route('/status')
