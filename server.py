@@ -1,5 +1,5 @@
 import json
-from klein import Klein
+from flask import Flask, make_response
 import sqlite3
 import io
 import pandas as pd
@@ -9,11 +9,11 @@ import matplotlib.dates as mdates
 import matplotlib.ticker as mtick
 import numpy as np
 
-app = Klein()
-resource = app.resource
-
-conn = sqlite3.connect('bib.db')
+conn = sqlite3.connect('bib.db', check_same_thread=False)
 c = conn.cursor()
+
+app = Flask(__name__)
+
 
 sns.set_style("whitegrid")
 blue, = sns.color_palette("muted", 1)
@@ -219,47 +219,53 @@ def avgbyWkdayByBib(name):
 
 
 @app.route('/')
-def items(self):
-    self.setHeader('Access-Control-Allow-Origin', '*')
+def items():
     return ("Connected")
 
 
 @app.route('/allGraph')
-def itemsGraph(self):
-    self.setHeader('Access-Control-Allow-Origin', '*')
-    return getAllCurrent()
+def itemsGraph():
+    resp = make_response(getAllCurrent())  # here you could use make_response(render_template(...)) too
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
 
 
 @app.route('/currentBar')
-def currentbar(self):
-    self.setHeader('Access-Control-Allow-Origin', '*')
-    return horBar()
+def currentbar():
+    resp = make_response(horBar())  # here you could use make_response(render_template(...)) too
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
 
 
 @app.route('/currentAvg')
-def currentavg(self):
-    self.setHeader('Access-Control-Allow-Origin', '*')
-    return getAverageHalfDay()
+def currentavg():
+    resp = make_response(getAverageHalfDay())  # here you could use make_response(render_template(...)) too
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
 
 @app.route('/avgWkDayAll')
-def avgWeekdayAll(self):
-    self.setHeader('Access-Control-Allow-Origin', '*')
-    return avergagebyWeekday()
+def avgWeekdayAll():
+    resp = make_response(avergagebyWeekday())  # here you could use make_response(render_template(...)) too
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
 
 @app.route('/wkdayBib/<string:name>', methods=['GET'])
-def avgWeekdayBib(self, name):
-    self.setHeader('Access-Control-Allow-Origin', '*')
-    return avgbyWkdayByBib(name)
+def avgWeekdayBib(name):
+    resp = make_response(avgbyWkdayByBib(name))  # here you could use make_response(render_template(...)) too
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
 
 
 @app.route('/status')
-def itemsStatus(self):
-    self.setHeader('Access-Control-Allow-Origin', '*')
-    self.setHeader('Content-Type', 'application/json')
-    return json.dumps(getCurrentStatus(), default=str)
+def itemsStatus():
+    resp = make_response(json.dumps(getCurrentStatus(), default=str))  # here you could use make_response(render_template(...)) too
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    resp.headers['Content-Type'] = 'application/json'
+    return resp
 
 
 @app.route('/bib/<string:name>/<string:limit>', methods=['GET'])
-def get_item(self, name, limit):
-    self.setHeader('Access-Control-Allow-Origin', '*')
-    return getSingleBib(name, limit)
+def get_item(name, limit):
+    resp = make_response(getSingleBib(name, limit))  # here you could use make_response(render_template(...)) too
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp

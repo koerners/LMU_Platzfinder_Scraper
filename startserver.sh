@@ -1,1 +1,1 @@
-PYTHONPATH=. twistd -n web --class=server.resource
+env FLASK_APP=server.py flask run
