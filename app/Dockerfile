@@ -16,6 +16,4 @@ RUN pip3 install -r requirements.txt
 
 COPY . .
 
-RUN sh letsencrypt_install.sh
-
 CMD sh startserver.sh

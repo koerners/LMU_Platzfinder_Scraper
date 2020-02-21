@@ -15,8 +15,8 @@ resource = app.resource
 try:
     conn = sqlite3.connect('DB/bib.db')
     c = conn.cursor()
-except e:
-    print(e)
+except Exception:
+    print("Fehler")
 
 sns.set_style("whitegrid")
 blue, = sns.color_palette("muted", 1)
