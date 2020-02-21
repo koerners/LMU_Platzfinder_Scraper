@@ -1,1 +1,1 @@
-env FLASK_APP=server.py flask run
+env FLASK_APP=main.py flask run

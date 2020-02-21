@@ -269,3 +269,4 @@ def get_item(name, limit):
     resp = make_response(getSingleBib(name, limit))  # here you could use make_response(render_template(...)) too
     resp.headers['Access-Control-Allow-Origin'] = '*'
     return resp
+
