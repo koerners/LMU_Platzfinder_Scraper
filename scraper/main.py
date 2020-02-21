@@ -9,7 +9,7 @@ import pandas as pd
 try:
     conn = sqlite3.connect('DB/bib.db')
     c = conn.cursor()
-except Exceptio:
+except Exception:
     print(traceback.print_exc())
 
 page = requests.get("https://www.ub.uni-muenchen.de/arbeiten/platzfinder/index.html")
@@ -56,10 +56,9 @@ def scrape():
 
     conn.close()
 
-while True:
-    try:
-        scrape()
-        print("Finished")
-        sleep(3600)
-    except Exception:
-        print(traceback.print_exc())
+
+try:
+    scrape()
+    print("Finished")
+except Exception:
+    print(traceback.print_exc())

@@ -12,4 +12,6 @@ services:
     build: ./scraper
     volumes:
       - ./DB/:/DB/
+    restart:  unless-stopped
+
 
