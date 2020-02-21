@@ -6,8 +6,11 @@ import traceback
 import sqlite3
 import pandas as pd
 
-conn = sqlite3.connect('bib.db')
-c = conn.cursor()
+try:
+    conn = sqlite3.connect('DB/bib.db')
+    c = conn.cursor()
+except e:
+    print(e)
 
 page = requests.get("https://www.ub.uni-muenchen.de/arbeiten/platzfinder/index.html")
 pattern = re.compile("(?<=google.visualization.arrayToDataTable\(\[)(.*)(?=\]\);)")
@@ -56,5 +59,6 @@ def scrape():
 
 try:
     scrape()
+    print("Finished")
 except Exception:
     print(traceback.print_exc())

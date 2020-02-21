@@ -12,8 +12,11 @@ import numpy as np
 app = Klein()
 resource = app.resource
 
-conn = sqlite3.connect('bib.db')
-c = conn.cursor()
+try:
+    conn = sqlite3.connect('DB/bib.db')
+    c = conn.cursor()
+except e:
+    print(e)
 
 sns.set_style("whitegrid")
 blue, = sns.color_palette("muted", 1)
