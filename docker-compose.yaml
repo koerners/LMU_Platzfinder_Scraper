@@ -3,7 +3,7 @@ services:
   webapp:
     build: ./app
     ports:
-      - 8080:8080
+      - 5000:8080
     volumes:
       - ./DB/:/usr/src/app/DB/
     restart:  unless-stopped
@@ -13,5 +13,15 @@ services:
     volumes:
       - ./DB/:/DB/
     restart:  unless-stopped
+
+  webserver:
+    build: ./apache
+    restart:  always
+    ports:
+    - 80:80
+    - 443:443
+
+
+
 
 
