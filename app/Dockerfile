@@ -1,9 +1,4 @@
-FROM ubuntu
-
-RUN apt-get update -y && \
-apt-get install python3-pip -y \
-&& apt-get install git -y
-
+FROM python
 
 ENV APP_PATH /usr/src/app
 RUN mkdir -p $APP_PATH
