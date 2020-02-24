@@ -19,7 +19,6 @@ services:
     environment:
       - VIRTUAL_HOST=webapp.local
       - VIRTUAL_PORT=8080
-      - NETWORK_ACCESS=internal
 
   scraper:
     build: ./scraper
