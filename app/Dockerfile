@@ -4,7 +4,7 @@ ENV APP_PATH /usr/src/app
 RUN mkdir -p $APP_PATH
 WORKDIR $APP_PATH
 
-EXPOSE 5000
+EXPOSE 8080
 
 COPY requirements.txt .
 RUN pip3 install -r requirements.txt

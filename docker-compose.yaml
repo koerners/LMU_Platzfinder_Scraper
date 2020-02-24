@@ -1,12 +1,25 @@
 version: "3.7"
 services:
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    environment:
+      - ENABLE_IPV6=true
+
   webapp:
     build: ./app
-    ports:
-      - 5000:8080
     volumes:
       - ./DB/:/usr/src/app/DB/
     restart:  unless-stopped
+    ports:
+    - 8080:8080
+    environment:
+      - VIRTUAL_HOST=webapp.local
+      - VIRTUAL_PORT=8080
+      - NETWORK_ACCESS=internal
 
   scraper:
     build: ./scraper
@@ -14,12 +27,15 @@ services:
       - ./DB/:/DB/
     restart:  unless-stopped
 
-  webserver:
-    build: ./apache
-    restart:  always
-    ports:
-    - 80:80
-    - 443:443
+
+
+#  webserver:
+#    build: ./apache
+#    restart:  always
+#    ports:
+#    - 80:80
+#    - 443:443
+
 
 
 
