@@ -33,10 +33,10 @@ services:
       - ./DB/:/usr/src/app/DB/
     restart: always
     ports:
-    - 8080:8080
+    - 5001:8080
     environment:
       - VIRTUAL_HOST=api.platzfinder.com
-      - VIRTUAL_PORT=8080
+      - VIRTUAL_PORT=5001
       - LETSENCRYPT_HOST=api.platzfinder.com
 
   scraper:
