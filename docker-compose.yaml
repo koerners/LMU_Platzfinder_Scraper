@@ -1,26 +1,6 @@
 version: "2"
 services:
 
-  webapp:
-    container_name: webapp
-    build: ./app
-    volumes:
-      - ./DB/:/usr/src/app/DB/
-    restart: always
-    ports:
-    - 8080:8080
-    environment:
-      - VIRTUAL_HOST=api.platzfinder.com
-      - VIRTUAL_PORT=8080
-      - LETSENCRYPT_HOST=api.platzfinder.com
-
-  scraper:
-    container_name: scraper
-    build: ./scraper
-    volumes:
-      - ./DB/:/DB/
-
-
   nginx-proxy:
     image: jwilder/nginx-proxy
     container_name: nginx-proxy
@@ -45,6 +25,26 @@ services:
       - certs:/etc/nginx/certs:rw
       - /var/run/docker.sock:/var/run/docker.sock:ro
     network_mode: bridge
+
+  webapp:
+    container_name: webapp
+    build: ./app
+    volumes:
+      - ./DB/:/usr/src/app/DB/
+    restart: always
+    ports:
+    - 8080:8080
+    environment:
+      - VIRTUAL_HOST=api.platzfinder.com
+      - VIRTUAL_PORT=8080
+      - LETSENCRYPT_HOST=api.platzfinder.com
+
+  scraper:
+    container_name: scraper
+    build: ./scraper
+    volumes:
+      - ./DB/:/DB/
+
 
 volumes:
   conf:
