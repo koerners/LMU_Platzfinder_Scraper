@@ -1,39 +1,43 @@
-version: "3.7"
+version: "2"
 services:
   nginx-proxy:
     image: jwilder/nginx-proxy
     ports:
       - "80:80"
+      - "443:443"
     volumes:
+      - /etc/nginx/certs
+      - /etc/nginx/vhost.d
+      - /usr/share/nginx/html
       - /var/run/docker.sock:/tmp/docker.sock:ro
     environment:
       - ENABLE_IPV6=true
+
+  nginx-proxy-letsencrypt:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    volumes_from:
+      - nginx-proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - DEFAULT_EMAIL=admin@platzfinder.com
 
   webapp:
     build: ./app
     volumes:
       - ./DB/:/usr/src/app/DB/
-    restart:  unless-stopped
+    restart: always
     ports:
     - 8080:8080
     environment:
       - VIRTUAL_HOST=webapp.local
       - VIRTUAL_PORT=8080
+      - LETSENCRYPT_HOST=api.platzfinder.com
 
   scraper:
     build: ./scraper
     volumes:
       - ./DB/:/DB/
-    restart:  unless-stopped
-
-
-
-#  webserver:
-#    build: ./apache
-#    restart:  always
-#    ports:
-#    - 80:80
-#    - 443:443
 
 
 
