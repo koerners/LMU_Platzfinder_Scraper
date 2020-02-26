@@ -3,10 +3,10 @@
 - Stellt die Daten als JSON, sowie mehrere Grafiken als SVG-Strings über eine API-Schnittstelle bereit
 - Verschlüsselung mit HTTPS unter Verwendung eines NGINX Reverse Proxys und automatischer Verwendung von Let's Encrypt Zertifikaten
 
-###[Angular Frontend](https://github.com/koerners/Platzfinder)
+### [Angular Frontend](https://github.com/koerners/Platzfinder)
 
 
-###Setup:
+### Setup:
 #### On a webserver with DNS-records pointing to a valid domain:
 
 1. Install Docker & Docker-Compose
