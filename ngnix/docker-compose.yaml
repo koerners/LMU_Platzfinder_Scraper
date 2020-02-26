@@ -14,7 +14,8 @@ services:
       - dhparam:/etc/nginx/dhparam
       - certs:/etc/nginx/certs:ro
       - /var/run/docker.sock:/tmp/docker.sock:ro
-    network_mode: bridge
+    networks:
+      - some-net
 
   letsencrypt:
     image: jrcs/letsencrypt-nginx-proxy-companion
@@ -24,7 +25,8 @@ services:
     volumes:
       - certs:/etc/nginx/certs:rw
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    network_mode: bridge
+    networks:
+      - some-net
 
 
 volumes:
@@ -35,5 +37,7 @@ volumes:
   certs:
 
 
-
+networks:
+  some-net:
+    driver: bridge
 
