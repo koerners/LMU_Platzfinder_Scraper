@@ -26,6 +26,70 @@ def fixSVG(string):
     return svg
 
 
+
+def getLastYear():
+
+    c.execute('SELECT strftime("%Y-%m-%d",auslastung.Daytime) as day, avg(auslastung.Belegt) as belegt FROM auslastung where datetime(auslastung.Daytime) >=datetime("now", "-365 days")  group by day')
+
+    alist = c.fetchall()
+    df = pd.DataFrame(alist)
+
+
+    df['datetime'] = pd.to_datetime(df[0])
+
+
+    fig, ax = plt.subplots(figsize=(11, 5))
+    date = df['datetime']
+    belegt = df[1]
+    plt.plot(date, belegt)
+
+    ax.yaxis.set_major_formatter(mtick.PercentFormatter())
+    formatter = mdates.DateFormatter('%d.%m.')
+    ax.xaxis.set_major_formatter(formatter)
+    plt.fill_between(date, 0, belegt, alpha=.3)
+    plt.legend(["Average occupancy in %"], loc='upper left')
+    fig.autofmt_xdate()
+    plt.tight_layout()
+
+    f = io.StringIO()
+    plt.savefig(f, format="svg")
+    plt.close(fig)
+    return fixSVG(f.getvalue())
+
+def getLastYearBib(name):
+
+    fields = [name]
+    c.execute('SELECT strftime("%Y-%m-%d",auslastung.Daytime) as day,  avg(auslastung.Belegt) as belegt FROM auslastung INNER JOIN bibs ON bibs.PK = auslastung.Ort where bibs.CutName = ? and datetime(auslastung.Daytime) >=datetime("now", "-365 days")  group by day ', fields)
+
+    alist = c.fetchall()
+    df = pd.DataFrame(alist)
+
+
+    df['datetime'] = pd.to_datetime(df[0])
+
+
+    fig, ax = plt.subplots(figsize=(11, 5))
+    date = df['datetime']
+    belegt = df[1]
+    plt.plot(date, belegt)
+
+    ax.yaxis.set_major_formatter(mtick.PercentFormatter())
+    formatter = mdates.DateFormatter('%d.%m.')
+    ax.xaxis.set_major_formatter(formatter)
+    plt.fill_between(date, 0, belegt, alpha=.3)
+    plt.legend(["Average occupancy in %"], loc='upper left')
+    fig.autofmt_xdate()
+    plt.tight_layout()
+
+    plt.show()
+    f = io.StringIO()
+    plt.savefig(f, format="svg")
+    plt.close(fig)
+    return fixSVG(f.getvalue())
+
+getLastYearBib("FBHistoricum")
+
+
 def getAllCurrent():
     c.execute(
         'SELECT auslastung.Daytime, bibs.RealName, auslastung.Belegt FROM auslastung INNER JOIN bibs ON bibs.PK = auslastung.Ort order by auslastung.Daytime desc limit 1000')
@@ -53,6 +117,7 @@ def getAllCurrent():
     plt.savefig(f, format="svg")
     plt.close(fig)
     return fixSVG(f.getvalue())
+
 
 
 def getSingleBib(name, limit):

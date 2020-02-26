@@ -10,6 +10,18 @@ def items(self):
     self.setHeader('Access-Control-Allow-Origin', '*')
     return ("Connected")
 
+@app.route('/lastYearAll')
+# Get line graph for the average occ in the last 365 day
+def getLineLastYear(self):
+    self.setHeader('Access-Control-Allow-Origin', '*')
+    return getLastYear()
+
+@app.route('/lastYearBib/<string:name>', methods=['GET'])
+# Get line graph for the average occ in the last 365 day
+def lastYearBib(self, name):
+    self.setHeader('Access-Control-Allow-Origin', '*')
+    return getLastYearBib(name)
+
 
 @app.route('/allGraph')
 # Line-Graph showing the occupancy of all libraries in the last ~Day
