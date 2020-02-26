@@ -1,5 +1,3 @@
-import json
-from klein import Klein
 import sqlite3
 import io
 import pandas as pd
@@ -9,11 +7,12 @@ import matplotlib.dates as mdates
 import matplotlib.ticker as mtick
 import numpy as np
 
-app = Klein()
-resource = app.resource
 
-conn = sqlite3.connect('bib.db')
-c = conn.cursor()
+try:
+    conn = sqlite3.connect('DB/bib.db')
+    c = conn.cursor()
+except Exception:
+    print("Error when connecting to DB")
 
 sns.set_style("whitegrid")
 blue, = sns.color_palette("muted", 1)
@@ -191,6 +190,30 @@ def avergagebyWeekday():
     return fixSVG(f.getvalue())
 
 
+def avergagebyWeekdayLastTwoWeeks():
+    c.execute('select round(avg(belegt),2),  round(avg(beschraenkt),2), case cast (strftime("%w", Daytime) as integer) when 0 then "Sunday" when 1 then "Monday" when 2 then "Tuesday" when 3 then "Wednesday" when 4 then "Thursday" when 5 then "Friday" else "Saturday" end as servdayofweek from auslastung where datetime(auslastung.Daytime) >=datetime("now", "-14 days")group by strftime("%w", Daytime) ')
+    alist = c.fetchall()
+    df = pd.DataFrame(alist)
+
+    ind = df[2]  # the x locations for the groups
+    width = 0.5  # the width of the bars: can also be len(x) sequence
+
+    plt.subplots(figsize=(11, 5))
+    p1 = plt.bar(ind, df[0]*(1-df[1]), width)
+    p2 = plt.bar(ind, df[0]*df[1], width,
+                 bottom=df[0]*(1-df[1]))
+
+    plt.ylabel('Occupancy in %')
+
+    plt.legend((p1[0], p2[0]), ('Open to public', 'Faculty only'))
+
+    plt.tight_layout()
+
+    f = io.StringIO()
+    plt.savefig(f, format="svg")
+    return fixSVG(f.getvalue())
+
+
 def avgbyWkdayByBib(name):
     fields = [name]
     c.execute('SELECT round(avg(auslastung.belegt),2), round(avg(auslastung.beschraenkt),2),  case cast (strftime("%w", auslastung.Daytime) as integer) when 0 then "Sunday" when 1 then "Monday" when 2 then "Tuesday" when 3 then "Wednesday" when 4 then "Thursday" when 5 then "Friday" else "Saturday" end as servdayofweek FROM auslastung INNER JOIN bibs ON bibs.PK = auslastung.Ort where bibs.CutName = ? group by strftime("%w", auslastung.Daytime)' , fields)
@@ -217,49 +240,27 @@ def avgbyWkdayByBib(name):
     return fixSVG(f.getvalue())
 
 
-
-@app.route('/')
-def items(self):
-    self.setHeader('Access-Control-Allow-Origin', '*')
-    return ("Connected")
-
-
-@app.route('/allGraph')
-def itemsGraph(self):
-    self.setHeader('Access-Control-Allow-Origin', '*')
-    return getAllCurrent()
+def avgbyWkdayByBibLastTwoWeeks(name):
+    fields = [name]
+    c.execute('SELECT round(avg(auslastung.belegt),2), round(avg(auslastung.beschraenkt),2),  case cast (strftime("%w", auslastung.Daytime) as integer) when 0 then "Sunday" when 1 then "Monday" when 2 then "Tuesday" when 3 then "Wednesday" when 4 then "Thursday" when 5 then "Friday" else "Saturday" end as servdayofweek FROM auslastung INNER JOIN bibs ON bibs.PK = auslastung.Ort where bibs.CutName = ? and datetime(auslastung.Daytime) >=datetime("now", "-14 days") group by strftime("%w", auslastung.Daytime)' , fields)
+    alist = c.fetchall()
+    df = pd.DataFrame(alist)
 
 
-@app.route('/currentBar')
-def currentbar(self):
-    self.setHeader('Access-Control-Allow-Origin', '*')
-    return horBar()
+    ind = df[2]  # the x locations for the groups
+    width = 0.5  # the width of the bars: can also be len(x) sequence
 
+    plt.subplots(figsize=(11, 5))
+    p1 = plt.bar(ind, df[0]*(1-df[1]), width)
+    p2 = plt.bar(ind, df[0]*df[1], width,
+                 bottom=df[0]*(1-df[1]))
 
-@app.route('/currentAvg')
-def currentavg(self):
-    self.setHeader('Access-Control-Allow-Origin', '*')
-    return getAverageHalfDay()
+    plt.ylabel('Occupancy in %')
 
-@app.route('/avgWkDayAll')
-def avgWeekdayAll(self):
-    self.setHeader('Access-Control-Allow-Origin', '*')
-    return avergagebyWeekday()
+    plt.legend((p1[0], p2[0]), ('Open to public', 'Faculty only'))
 
-@app.route('/wkdayBib/<string:name>', methods=['GET'])
-def avgWeekdayBib(self, name):
-    self.setHeader('Access-Control-Allow-Origin', '*')
-    return avgbyWkdayByBib(name)
+    plt.tight_layout()
 
-
-@app.route('/status')
-def itemsStatus(self):
-    self.setHeader('Access-Control-Allow-Origin', '*')
-    self.setHeader('Content-Type', 'application/json')
-    return json.dumps(getCurrentStatus(), default=str)
-
-
-@app.route('/bib/<string:name>/<string:limit>', methods=['GET'])
-def get_item(self, name, limit):
-    self.setHeader('Access-Control-Allow-Origin', '*')
-    return getSingleBib(name, limit)
+    f = io.StringIO()
+    plt.savefig(f, format="svg")
+    return fixSVG(f.getvalue())

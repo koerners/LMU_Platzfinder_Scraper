@@ -1,0 +1,33 @@
+version: "2"
+services:
+
+  webapp:
+    container_name: webapp
+    build: ./app
+    volumes:
+      - ./DB/:/usr/src/app/DB/
+    restart: always
+    ports:
+    - 8080:8080
+    environment:
+      - VIRTUAL_HOST=api.platzfinder.com
+      - VIRTUAL_PORT=8080
+      - LETSENCRYPT_HOST=api.platzfinder.com
+      - LETSENCRYPT_EMAIL=admin@platzfinder.com
+    networks:
+      - ngnix_some-net
+
+
+  scraper:
+    container_name: scraper
+    build: ./scraper
+    volumes:
+      - ./DB/:/DB/
+
+networks:
+  ngnix_some-net:
+    external: true
+
+
+
+
