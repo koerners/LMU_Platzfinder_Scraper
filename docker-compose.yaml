@@ -12,7 +12,7 @@ services:
     environment:
       - VIRTUAL_HOST=api.platzfinder.com
       - VIRTUAL_PORT=8080
-      - LETSENCRYPT_HOST=api1.platzfinder.com
+      - LETSENCRYPT_HOST=api.platzfinder.com
       - LETSENCRYPT_EMAIL=admin@platzfinder.com
     networks:
       - ngnix_some-net
