@@ -61,6 +61,12 @@ def avgWeekdayBib(self, name):
     self.setHeader('Access-Control-Allow-Origin', '*')
     return avgbyWkdayByBib(name)
 
+@app.route('/bibInfo/<string:name>', methods=['GET'])
+# Get real name from Bib
+def bibInfo(self, name):
+    self.setHeader('Access-Control-Allow-Origin', '*')
+    return getBibInfo(name)
+
 @app.route('/wkdayBibLastTwoWeeks/<string:name>', methods=['GET'])
 # Shows the average occupancy of one library per Weekday (last two weeks)
 def wkdayBibLastTwoWeeks(self, name):

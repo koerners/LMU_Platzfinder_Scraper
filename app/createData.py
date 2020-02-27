@@ -87,8 +87,14 @@ def getLastYearBib(name):
     plt.close(fig)
     return fixSVG(f.getvalue())
 
-getLastYearBib("FBHistoricum")
+def getBibInfo(name):
 
+    fields = [name]
+    c.execute('Select RealName from bibs where CutName = ? ', fields)
+    alist = c.fetchall()
+    df = pd.DataFrame(alist)
+
+    return df[0][0]
 
 def getAllCurrent():
     c.execute(

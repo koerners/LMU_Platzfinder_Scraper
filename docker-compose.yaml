@@ -10,9 +10,9 @@ services:
     ports:
     - 8080:8080
     environment:
-      - VIRTUAL_HOST=api.platzfinder.com
+      - VIRTUAL_HOST=api2.platzfinder.com
       - VIRTUAL_PORT=8080
-      - LETSENCRYPT_HOST=api.platzfinder.com
+      - LETSENCRYPT_HOST=api2.platzfinder.com
       - LETSENCRYPT_EMAIL=admin@platzfinder.com
       - TZ=Europe/Berlin
     networks:
