@@ -1,6 +1,8 @@
 import json
 from klein import Klein
 from createData import *
+from twisted.web.static import File
+from createStaticData import reload
 
 app = Klein()
 resource = app.resource
@@ -22,38 +24,6 @@ def lastYearBib(self, name):
     self.setHeader('Access-Control-Allow-Origin', '*')
     return getLastYearBib(name)
 
-
-@app.route('/allGraph')
-# Line-Graph showing the occupancy of all libraries in the last ~Day
-def itemsGraph(self):
-    self.setHeader('Access-Control-Allow-Origin', '*')
-    return getAllCurrent()
-
-
-@app.route('/currentBar')
-# Shows the current occupancy of all libraries as Bar-Graph
-def currentbar(self):
-    self.setHeader('Access-Control-Allow-Origin', '*')
-    return horBar()
-
-
-@app.route('/currentAvg')
-# Shows the average occupancy of all libraries in the last hours as line-graph
-def currentavg(self):
-    self.setHeader('Access-Control-Allow-Origin', '*')
-    return getAverageHalfDay()
-
-@app.route('/avgWkDayAll')
-# Shows the average occupancy of all libraries per Weekday (all time)
-def avgWeekdayAll(self):
-    self.setHeader('Access-Control-Allow-Origin', '*')
-    return avergagebyWeekday()
-
-@app.route('/avgWkDayAllLastTwoWeeks')
-# Shows the average occupancy of all libraries per Weekday (last two weeks)
-def avgWkDayAllLastTwoWeeks(self):
-    self.setHeader('Access-Control-Allow-Origin', '*')
-    return avergagebyWeekdayLastTwoWeeks()
 
 @app.route('/wkdayBib/<string:name>', methods=['GET'])
 # Shows the average occupancy of one library per Weekday (all time)
@@ -80,8 +50,21 @@ def itemsStatus(self):
     self.setHeader('Content-Type', 'application/json')
     return json.dumps(getCurrentStatus(), default=str)
 
+
 @app.route('/bib/<string:name>/<string:limit>', methods=['GET'])
 # Line-Graph of occupancy by library [name] in the last [limit] entries
 def get_item(self, name, limit):
     self.setHeader('Access-Control-Allow-Origin', '*')
     return getSingleBib(name, limit)
+
+
+@app.route('/static/', branch=True)
+def static(self):
+    self.setHeader('Access-Control-Allow-Origin', '*')
+    return File("./static/")
+
+@app.route('/reload')
+# Reload the static svgs
+def reloadMe(self):
+    self.setHeader('Access-Control-Allow-Origin', '*')
+    return reload()

@@ -5,6 +5,7 @@ from datetime import datetime
 import traceback
 import sqlite3
 import pandas as pd
+import requests
 
 try:
     conn = sqlite3.connect('DB/bib.db')
@@ -59,6 +60,7 @@ def scrape():
 
 try:
     scrape()
+    r = requests.get('https://api2.platzfinder.com/reload')
     print("Finished")
 except Exception:
     print(traceback.print_exc())
