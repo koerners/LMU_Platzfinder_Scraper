@@ -50,6 +50,13 @@ def itemsStatus(self):
     self.setHeader('Content-Type', 'application/json')
     return json.dumps(getCurrentStatus(), default=str)
 
+@app.route('/allBibs')
+# Lists the latest scraped entries
+def allBibs(self):
+    self.setHeader('Access-Control-Allow-Origin', '*')
+    self.setHeader('Content-Type', 'application/json')
+    return json.dumps(getAllBibs(), default=str)
+
 
 @app.route('/bib/<string:name>/<string:limit>', methods=['GET'])
 # Line-Graph of occupancy by library [name] in the last [limit] entries

@@ -142,6 +142,13 @@ def getCurrentStatus():
     df[0] = pd.to_datetime(df[0])
     return df.values.tolist()
 
+def getAllBibs():
+    c.execute(
+        'Select * from bibs')
+    alist = c.fetchall()
+    df = pd.DataFrame(alist)
+    return df.values.tolist()
+
 
 
 def avgbyWkdayByBib(name):
